@@ -1,0 +1,123 @@
+<head>
+    <style>
+        /* ANIMATION CODE */
+        @keyframes multicolorStrobo {
+        0%   {background-color: red;}
+        25%  {background-color: yellow;}
+        50%  {background-color: blue;}
+        100% {background-color: green;}
+        }
+
+        /* The element to apply the animation to */
+        .multicolorStrobo {
+            /* width: 100px;
+            height: 100px; */
+            background-color: white;
+            animation-name: multicolorStrobo;
+            animation-duration: 0.2s;
+            animation-iteration-count: infinite;
+        } 
+
+        @keyframes harshStrobe {
+        0%   {background-color: black;}
+        50%  {background-color: white;}
+        75%   {background-color: black;}
+        100% {background-color: white;}
+        }   
+
+        /* The element to apply the animation to */
+        .harshStrobe {
+            /* width: 100px;
+            height: 100px; */
+            background-color: white;
+            animation-name: harshStrobe;
+            animation-duration: 0.15s;
+            animation-iteration-count: 1;
+        } 
+
+        #container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LAYER BLEND MODE */
+        #layer1 {
+            /* background-color: black; */
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        #layer2 {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 100%;
+            mix-blend-mode: multiply;
+        }
+
+    </style>
+    <script>
+        let displayFactor = .25; // display frame for a quarter beat
+        let accelerationFactor = 1; // consider a frame a whole beat
+        let clockBeatAnimation = "harshStrobe"; // animation to trigger on each clock tick
+
+        let clockBeatSequence = (eventData) => {
+            document.getElementById("layer1").classList.remove(clockBeatAnimation);
+            document.getElementById("layer1").offsetWidth;
+            document.getElementById("layer1").classList.add(clockBeatAnimation);
+        }
+
+        let noteOnSequence = (eventData) => {
+            // Add your button logic here
+            document.getElementById("layer2").classList.remove("multicolorStrobo");
+            document.getElementById("layer2").offsetWidth;
+            document.getElementById("layer2").classList.add("multicolorStrobo");
+        }
+
+        let noteOffSequence = (eventData) => {
+            // Add your button logic here
+            document.getElementById("layer2").classList.remove("multicolorStrobo");
+        }
+
+        let exampleSocket = new WebSocket("ws://localhost:9999/midiTick");
+        
+
+        // CODE FOR CONNECTION TO WEBSOCKET
+        setTimeout(()=>{
+            exampleSocket.onmessage = function (event) {
+                let parsedEventObject = JSON.parse(event.data);
+
+                console.log(parsedEventObject)
+                // define events here on now the timeline should report something and time calculations
+                let timeout = (60 * accelerationFactor) / parsedEventObject.bpm; // this is the time per beat
+                let displayTimeout = (timeout * 1000) * displayFactor; // a quarter beat
+
+                if(parsedEventObject.type === "TimingClock"){
+                    console.log("clockBeatSequence");
+                    clockBeatSequence(parsedEventObject);
+                }
+                
+                else if(parsedEventObject.type === "NoteOn"){
+                    console.log("noteOnSequence");
+                    noteOnSequence(parsedEventObject);
+                }
+                
+                else if(parsedEventObject.type === "NoteOff"){
+                    console.log("noteOffSequence");
+                    noteOffSequence(parsedEventObject);
+                }
+            }
+            exampleSocket.send("asddaads")
+        }, 1000)
+    </script>
+</head>
+<body>
+    <div id="layer1"></div>
+    <div id="layer2"></div>
+</body>
